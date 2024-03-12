@@ -4,11 +4,12 @@ const cors = require("cors");
 const ejs = require("ejs");
 const path = require("path");
 require("dotenv").config();
-require("./config/google-oauth20");
+require("./config/passport.local");
 const passport = require("passport");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const { serverErrorHandler, clientErrorHandler, logoutHandler, profileHandler, checkAuthenticated, loginHandler, checkLoggedIn, homePageHandler } = require("./controllers/users.controller");
+const { usersRoute } = require("./routes/users.route");
 
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
@@ -18,6 +19,7 @@ app.use(cors());
 app.use(express.urlencoded({extended : false}));
 app.use(express.json());
 
+app.use("/user", usersRoute);
 
 // Session Create
 app.set('trust proxy', 1)
@@ -37,19 +39,16 @@ app.use(passport.session());
 // Home Route
 app.get("/", homePageHandler);
 
-// User Authenticate 
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile'] })
-);
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/user/login', successRedirect: '/user/profile' })
-);
-
 // Login
-app.get("/user/login", checkLoggedIn , loginHandler);
+app.get("/user/login" ,checkLoggedIn, loginHandler);
+
+// User Authenticate 
+app.post('/user/login', 
+  passport.authenticate('local', { failureRedirect: '/user/login', successRedirect: '/user/profile' })
+);
 
 // Profile Page 
-app.get("/user/profile", checkAuthenticated , profileHandler);
+app.get("/user/profile" , checkAuthenticated, profileHandler);
 
 // Logout
 app.get("/user/logout", logoutHandler);
